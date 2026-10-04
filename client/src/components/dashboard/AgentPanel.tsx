@@ -1,5 +1,7 @@
-import { Fragment, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { KeyboardEvent, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import ReactMarkdown, { Components } from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { AlertCircle, ArrowUp, X } from "lucide-react";
 import { BACKEND_URL } from "../../config";
 import { authHeaders, errorMessage } from "../../api";
@@ -44,36 +46,69 @@ const MODES: { id: Mode; label: string; hint: string; defaultPrompt?: string }[]
   { id: "compare", label: "Compare", hint: "Add a focus (optional)", defaultPrompt: "Compare the selected items." },
 ];
 
-// Turns [1] or [1, 3] in an answer into numbered chips that link to the source
+const CITATION = /\[(\d+(?:\s*,\s*\d+)*)\](?!\()/g;
+
+// Rewrites [1] or [1, 3] as Markdown links to #cite-N, which the "a" renderer below turns into numbered chips
+function linkCitations(text: string): string {
+  return text.replace(CITATION, (_, nums: string) =>
+    nums
+      .split(",")
+      .map((n) => `[${n.trim()}](#cite-${n.trim()})`)
+      .join("")
+  );
+}
+
+const chipClass =
+  "mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded bg-lichen px-1 align-text-top text-xs font-semibold text-plum no-underline outline-none hover:bg-plum hover:text-chalk focus-visible:ring-2 focus-visible:ring-plum";
+
 function AnswerText({ text, sources }: { text: string; sources: AnswerSource[] }) {
-  const parts = text.split(/(\[\d+(?:\s*,\s*\d+)*\])/g);
-  return (
-    <p className="whitespace-pre-wrap break-words leading-7">
-      {parts.map((part, i) => {
-        const match = /^\[(\d+(?:\s*,\s*\d+)*)\]$/.exec(part);
-        if (!match) return <Fragment key={i}>{part}</Fragment>;
-        return (
-          <Fragment key={i}>
-            {match[1].split(",").map((raw) => {
-              const n = Number(raw.trim());
-              const source = sources.find((s) => s.n === n);
-              if (!source) return <Fragment key={n}>[{n}]</Fragment>;
-              const chip =
-                "mx-0.5 inline-grid h-5 min-w-5 place-items-center rounded bg-lichen px-1 align-text-top text-xs font-semibold text-plum no-underline outline-none hover:bg-plum hover:text-chalk focus-visible:ring-2 focus-visible:ring-plum";
-              return source.link ? (
-                <a key={n} href={source.link} target="_blank" rel="noopener noreferrer" title={source.title} className={chip}>
-                  {n}
-                </a>
-              ) : (
-                <span key={n} title={source.title} className={chip}>
-                  {n}
-                </span>
-              );
-            })}
-          </Fragment>
+  const components: Components = {
+    a({ href, children }) {
+      const cite = href && /^#cite-(\d+)$/.exec(href);
+      if (cite) {
+        const n = Number(cite[1]);
+        const source = sources.find((s) => s.n === n);
+        if (!source) return <>[{n}]</>;
+        return source.link ? (
+          <a href={source.link} target="_blank" rel="noopener noreferrer" title={source.title} className={chipClass}>
+            {n}
+          </a>
+        ) : (
+          <span title={source.title} className={chipClass}>
+            {n}
+          </span>
         );
-      })}
-    </p>
+      }
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">
+          {children}
+        </a>
+      );
+    },
+    h1: ({ children }) => <h3 className="mb-2 mt-4 font-display text-xl first:mt-0">{children}</h3>,
+    h2: ({ children }) => <h3 className="mb-2 mt-4 font-display text-lg first:mt-0">{children}</h3>,
+    h3: ({ children }) => <h4 className="mb-1 mt-3 font-semibold first:mt-0">{children}</h4>,
+    h4: ({ children }) => <h4 className="mb-1 mt-3 font-semibold first:mt-0">{children}</h4>,
+    p: ({ children }) => <p className="mb-3 break-words leading-7 last:mb-0">{children}</p>,
+    ul: ({ children }) => <ul className="mb-3 list-disc space-y-1 pl-5 leading-7 last:mb-0">{children}</ul>,
+    ol: ({ children }) => <ol className="mb-3 list-decimal space-y-1 pl-5 leading-7 last:mb-0">{children}</ol>,
+    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+    code: ({ children }) => <code className="rounded bg-lichen px-1 py-0.5 text-[0.9em]">{children}</code>,
+    hr: () => <hr className="my-4 border-moss" />,
+    table: ({ children }) => (
+      <div className="mb-3 overflow-x-auto last:mb-0">
+        <table className="w-full border-collapse text-left text-sm">{children}</table>
+      </div>
+    ),
+    th: ({ children }) => <th className="border border-moss bg-lichen px-3 py-2 font-semibold">{children}</th>,
+    td: ({ children }) => <td className="border border-moss px-3 py-2 align-top">{children}</td>,
+  };
+  return (
+    <div>
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+        {linkCitations(text)}
+      </ReactMarkdown>
+    </div>
   );
 }
 
