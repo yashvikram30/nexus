@@ -2,8 +2,9 @@ import axios from "axios"; // Importing axios for making HTTP requests
 import { useEffect, useState } from "react"; // Importing useEffect and useState from React
 import { BACKEND_URL } from "../config"; // Importing the backend URL from configuration
 
-interface Content {
+export interface Content {
   contentId: string
+  folderId: string | null;
   content: string | undefined;
   title: string;
   link: string;
@@ -15,6 +16,8 @@ interface Content {
 export function useContent() {
     // State to hold the fetched content
     const [contents, setContents] = useState<Content[]>([]);
+    // True until the first request settles, so pages can show a loading state instead of "empty"
+    const [loading, setLoading] = useState(true);
 
     // Function to refresh and fetch content from the backend
     function refresh() {
@@ -26,10 +29,12 @@ export function useContent() {
             .then((response) => {
                 // If the request is successful, update the contents state with the fetched data
                 setContents((response.data as { content: Content[] }).content);
+                setLoading(false);
             })
             .catch((error) => {
                 // Handle any error that occurs during the request (optional)
                 console.error("Error fetching content:", error);
+                setLoading(false);
             });
     }
 
@@ -49,5 +54,5 @@ export function useContent() {
     }, []); // Empty dependency array ensures this effect runs only once when the component mounts
 
     // Returning the contents and refresh function to be used in components that consume this hook
-    return { contents, refresh };
+    return { contents, loading, refresh };
 }

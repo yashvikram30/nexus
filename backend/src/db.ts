@@ -3,7 +3,9 @@ import mongoose, { Schema, Document } from "mongoose";
 // Create an interface for the User
 interface IUser extends Document {
   username: string;
-  password: string;
+  password?: string; // absent for accounts created through Google sign-in
+  email?: string;
+  googleId?: string;
 }
 
 interface IContent extends Document {
@@ -16,7 +18,10 @@ interface IContent extends Document {
 
 const userSchema = new Schema({
   username: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
+  password: { type: String },
+  // sparse so the many password-only users (no value) don't collide on the unique index
+  email: { type: String, unique: true, sparse: true },
+  googleId: { type: String, unique: true, sparse: true }
 });
 
 // Export with consistent model name
@@ -30,9 +35,25 @@ const contentSchema = new Schema({
   content: {type: String },
   tags: [{ type: mongoose.Types.ObjectId, ref: 'Tag' }],
   userId: { type: mongoose.Types.ObjectId, ref: 'User', required: true }, // The ref name should match the model name, else the program will throw an error
-});
+  // An item lives in at most one folder; null means it is unfiled
+  folderId: { type: mongoose.Types.ObjectId, ref: 'Folder', default: null },
+  // Readable text pulled from the link for the RAG agent, cached so each run doesn't refetch the page
+  extractedText: { type: String },
+  extractedAt: { type: Date },
+  extractError: { type: String },
+}, { timestamps: true });
 
 export const Content = mongoose.model('Content', contentSchema);
+
+const folderSchema = new Schema({
+  userId: { type: mongoose.Types.ObjectId, ref: 'User', required: true },
+  name: { type: String, required: true, trim: true },
+}, { timestamps: true });
+
+// Folder names are unique per user, ignoring case ("Research" and "research" collide)
+folderSchema.index({ userId: 1, name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
+
+export const Folder = mongoose.model('Folder', folderSchema);
 
 const linkSchema = new mongoose.Schema({
   hash: String,

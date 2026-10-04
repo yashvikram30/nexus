@@ -1,62 +1,103 @@
-import { useRef } from "react";
-import Button from "../components/ui/Button";
-import Input from "../components/ui/Input";
+import { FormEvent, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_URL } from "../config";
-import { useNavigate } from "react-router-dom";
+import AuthLayout from "../components/auth/AuthLayout";
+import GoogleSection from "../components/auth/GoogleSection";
+import { errorMessage, field, focus, googleSignin, passwordSignin } from "../components/auth/authUtils";
+import { BACKEND_URL, GOOGLE_CLIENT_ID } from "../config";
+
+const MIN_PASSWORD = 8;
 
 const Signup = () => {
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  async function signup() {
-    const username = usernameRef.current?.value;
-    const password = passwordRef.current?.value;
-    await axios.post(`${BACKEND_URL}/api/v1/signup`, {
-      username,
-      password
+  // Runs a request that resolves to a token, then stores it and opens the dashboard
+  async function run(request: () => Promise<string>) {
+    setError("");
+    setLoading(true);
+    try {
+      localStorage.setItem("token", await request());
+      navigate("/dashboard");
+    } catch (err) {
+      setError(errorMessage(err));
+      setLoading(false);
+    }
+  }
+
+  function signup(e: FormEvent) {
+    e.preventDefault();
+    const username = usernameRef.current?.value.trim() ?? "";
+    const password = passwordRef.current?.value ?? "";
+
+    if (password.length < MIN_PASSWORD) {
+      setError(`Password must be at least ${MIN_PASSWORD} characters.`);
+      return;
+    }
+
+    // Create the account, then sign straight in so there is no second form to fill
+    run(async () => {
+      await axios.post(`${BACKEND_URL}/api/v1/signup`, { username, password });
+      return passwordSignin(username, password);
     });
-    navigate('/signin');
-    alert("You have signed up!");
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex justify-center items-center p-4">
-      <div className="w-full max-w-md bg-white shadow-lg rounded-xl p-8">
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-8">
-          Create Account
-        </h1>
-        
-        <div className="space-y-6">
-          <div>
-            <Input 
-              reference={usernameRef}
-              placeholder="Username"
-              classes="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
-          </div>
+    <AuthLayout
+      headline="Save once. Ask whenever you need it."
+      blurb="Create an account and start collecting links, videos, posts and notes in one place."
+      title="Create your account"
+      subtitle="Sign up with Google or choose a username and password."
+    >
+      <GoogleSection onCredential={(c) => run(() => googleSignin(c))} onError={setError} />
 
-          <div>
-            <Input 
-              reference={passwordRef}
-              placeholder="Password"
-              classes="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            />
-          </div>
+      <form onSubmit={signup} className={GOOGLE_CLIENT_ID ? "" : "mt-8"}>
+        <label className="block font-medium" htmlFor="username">
+          Username
+          <input id="username" ref={usernameRef} type="text" autoComplete="username" required className={field} />
+        </label>
 
-          <Button
-            variant="primary"
-            text="Sign up"
-            size="lg"
-            fullWidth={true}
-            loading={false}
-            onClick={signup}
-            classes="w-full py-3 bg-gray-800 hover:bg-gray-900 text-white font-medium rounded-lg transition-colors duration-200"
+        <label className="mt-5 block font-medium" htmlFor="password">
+          Password
+          <input
+            id="password"
+            ref={passwordRef}
+            type="password"
+            autoComplete="new-password"
+            required
+            aria-describedby="password-hint"
+            className={field}
           />
-        </div>
-      </div>
-    </div>
+          <span id="password-hint" className="mt-2 block text-sm font-normal text-bark/70">
+            At least {MIN_PASSWORD} characters.
+          </span>
+        </label>
+
+        {error && (
+          <p role="alert" className="mt-5 rounded-md border border-red-800/40 bg-chalk px-4 py-3 text-sm text-red-800">
+            {error}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`mt-6 w-full rounded-md bg-plum px-6 py-3 font-semibold text-chalk transition-colors hover:bg-bark disabled:opacity-60 ${focus}`}
+        >
+          {loading ? "Creating account…" : "Create account"}
+        </button>
+      </form>
+
+      <p className="mt-8 text-center text-bark/80">
+        Already have an account?{" "}
+        <Link to="/signin" className={`rounded font-semibold underline underline-offset-4 ${focus}`}>
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 };
 

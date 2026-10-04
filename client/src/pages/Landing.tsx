@@ -1,154 +1,143 @@
 import { Link } from "react-router-dom";
-import { Brain, PenTool, Search, Share2 } from "lucide-react";
+import AnswerSheet from "../components/landing/AnswerSheet";
+import { CONTENT_TYPES } from "../contentTypes";
+
+const STEPS = [
+  { title: "Save", body: "Paste a link or write a note. Nexus works out whether it is an article, video, post or repo." },
+  { title: "Read", body: "Nexus reads what you saved and indexes it, so you can search by meaning and not only by title." },
+  { title: "Ask", body: "Ask in plain language. Every answer points back to the saved items it came from." },
+];
+
+const FEATURES = [
+  { title: "Every format in one place", body: "Articles, videos, posts, repos and your own text sit side by side, with a filter for each source." },
+  { title: "Answers you can check", body: "Each answer lists the saved items behind it, so the original is one click away." },
+  { title: "Share a view of your brain", body: "Send someone a read-only link to what you have collected." },
+];
+
+const focus =
+  "outline-none focus-visible:ring-2 focus-visible:ring-plum focus-visible:ring-offset-2 focus-visible:ring-offset-lichen";
 
 export default function LandingPage() {
+  const signedIn = Boolean(localStorage.getItem("token"));
+  const startHref = signedIn ? "/dashboard" : "/signup";
+  const sources = CONTENT_TYPES.filter((t) => t.hasLink && t.id !== "link");
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-14 flex items-center">
-        <Link className="flex items-center justify-center" to="#">
-          <Brain className="h-6 w-6 mr-2" />
-          <span className="font-bold">SecondBrain</span>
+    <div className="min-h-screen bg-lichen font-body text-bark">
+      <header className="mx-auto flex max-w-6xl items-center px-5 py-5 sm:px-8">
+        <Link to="/" className={`rounded font-display text-2xl ${focus}`}>
+          Nexus
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6 items-center">
+        <nav className="ml-auto flex items-center gap-5 text-sm font-medium sm:gap-7">
+          <a href="#how" className={`rounded hover:underline underline-offset-4 ${focus}`}>
+            How it works
+          </a>
           <Link
-            className="text-sm font-medium hover:underline underline-offset-4"
-            to="#"
+            to={signedIn ? "/dashboard" : "/signin"}
+            className={`rounded-md border border-bark px-4 py-2 transition-colors hover:bg-bark hover:text-lichen ${focus}`}
           >
-            Features
-          </Link>
-          <Link
-            className="text-sm font-medium hover:underline underline-offset-4"
-            to="#"
-          >
-            Pricing
-          </Link>
-          <Link
-            className="text-sm font-medium hover:underline underline-offset-4"
-            to="#"
-          >
-            Blog
-          </Link>
-          <Link
-            className="text-sm font-medium hover:underline underline-offset-4 bg-gray-800 text-white rounded-md px-2 py-1"
-            to={localStorage.getItem("token")?"/dashboard":"/signin"}
-          >
-            Signin
+            {signedIn ? "Open dashboard" : "Sign in"}
           </Link>
         </nav>
       </header>
-      <main className="flex-1">
-        <section className="w-full flex items-center justify-center py-12 md:py-24 lg:py-32 xl:py-48 ">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none">
-                  Your Second Brain, Organized
-                </h1>
-                <p className="mx-auto max-w-[700px] text-gray-500 md:text-xl dark:text-gray-400">
-                  Capture, organize, and retrieve your thoughts effortlessly.
-                  Boost your productivity and creativity with SecondBrain.
-                </p>
-              </div>
-              <div className="flex justify-center items-center">
-                <Link
-                  to={localStorage.getItem("token")?"/dashboard":"/signup"}
-                  className="bg-gray-800 text-white font-bold px-8 py-2 rounded-md"
-                >
-                  Get Started
-                </Link>
-              </div>
-            </div>
+
+      <main>
+        <section className="mx-auto max-w-6xl px-5 pb-16 pt-12 sm:px-8 md:pt-20">
+          <h1 className="max-w-3xl font-display text-5xl leading-[1.05] tracking-tight sm:text-6xl md:text-7xl">
+            Ask everything you have saved.
+          </h1>
+          <p className="mt-6 max-w-xl text-lg leading-8 text-bark/80">
+            Paste links from Medium, YouTube, X, GitHub and Reddit. Nexus reads them, then answers your
+            questions and shows you where each answer came from.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              to={startHref}
+              className={`rounded-md bg-plum px-6 py-3 font-semibold text-chalk transition-colors hover:bg-bark ${focus}`}
+            >
+              {signedIn ? "Open your dashboard" : "Start saving links"}
+            </Link>
+            <a href="#how" className={`rounded px-2 py-3 font-medium underline underline-offset-4 ${focus}`}>
+              See how it works
+            </a>
+          </div>
+
+          <div className="mt-14">
+            <AnswerSheet />
           </div>
         </section>
-        <section className="w-full flex items-center justify-center py-12 md:py-24 lg:py-32 bg-gray-100 dark:bg-gray-800 text-white">
-          <div className="container px-4 md:px-6">
-            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12">
-              Key Features
+
+        <section aria-label="Supported sources" className="border-y border-moss">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-8 gap-y-3 px-5 py-5 sm:px-8">
+            <p className="font-medium">Save from</p>
+            <ul className="flex flex-wrap gap-x-7 gap-y-3 text-bark/80">
+              {sources.map((t) => (
+                <li key={t.id} className="flex items-center gap-2">
+                  <t.icon className="size-5" aria-hidden />
+                  {t.label}
+                </li>
+              ))}
+              <li>and any web page</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="how" className="mx-auto max-w-6xl scroll-mt-4 px-5 py-20 sm:px-8 md:py-28">
+          <h2 className="max-w-xl font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+            From a pile of links to a straight answer.
+          </h2>
+          <ol className="mt-12 grid gap-10 md:grid-cols-3 md:gap-0">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className={`md:px-8 md:first:pl-0 md:last:pr-0 ${i > 0 ? "md:border-l md:border-moss" : ""}`}>
+                <span className="font-display text-5xl text-plum" aria-hidden>
+                  {i + 1}
+                </span>
+                <h3 className="mt-3 text-xl font-semibold">{s.title}</h3>
+                <p className="mt-2 max-w-sm leading-7 text-bark/80">{s.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
+
+        <section className="bg-chalk">
+          <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 sm:px-8 md:grid-cols-[1fr_1.4fr] md:gap-16 md:py-24">
+            <h2 className="font-display text-4xl leading-tight tracking-tight sm:text-5xl">
+              Built for people who save more than they reread.
             </h2>
-            <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 items-start justify-center">
-              <div className="flex flex-col items-center space-y-2 border-gray-800 p-4 rounded-lg">
-                <PenTool className="h-8 w-8 mb-2" />
-                <h3 className="text-xl font-bold">Easy Note-Taking</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  Quickly capture your thoughts with our intuitive interface.
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2 border-gray-800 p-4 rounded-lg">
-                <Search className="h-8 w-8 mb-2" />
-                <h3 className="text-xl font-bold">Powerful Search</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  Find any piece of information in seconds with our advanced
-                  search.
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2 border-gray-800 p-4 rounded-lg">
-                <Share2 className="h-8 w-8 mb-2" />
-                <h3 className="text-xl font-bold">Easy Sharing</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  Collaborate with others by sharing your notes and ideas.
-                </p>
-              </div>
-              <div className="flex flex-col items-center space-y-2 border-gray-800 p-4 rounded-lg">
-                <Brain className="h-8 w-8 mb-2" />
-                <h3 className="text-xl font-bold">AI-Powered Insights</h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
-                  Gain new perspectives with AI-generated connections and
-                  summaries.
-                </p>
-              </div>
-            </div>
+            <dl className="divide-y divide-moss border-y border-moss">
+              {FEATURES.map((f) => (
+                <div key={f.title} className="py-6">
+                  <dt className="text-xl font-semibold">{f.title}</dt>
+                  <dd className="mt-2 max-w-md leading-7 text-bark/80">{f.body}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </section>
-        <section className="w-full flex items-center justify-center py-12 md:py-24 lg:py-32">
-          <div className="container px-4 md:px-6">
-            <div className="flex flex-col items-center space-y-4 text-center">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl">
-                  Start Organizing Your Thoughts Today
-                </h2>
-                <p className="mx-auto max-w-[600px] text-gray-500 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
-                  Join thousands of users who have transformed their
-                  productivity with SecondBrain.
-                </p>
-              </div>
-              <div className="w-full max-w-sm space-y-2">
-                <form className="flex space-x-2">
-                  <input
-                    className="max-w-lg flex-1"
-                    placeholder="Enter your email"
-                    type="email"
-                  />
-                  <Link to="/signup" className="bg-gray-800 text-white hover:bg-gray-900 border rounded-md px-4 py-2">Signup</Link>
-                </form>
-                
-                <div className="flex items-center justify-center space-x-2 text-sm">
-                  <span className="text-gray-500 dark:text-gray-400">
-                    Already have an account?
-                  </span>
-                  <Link
-                    className="font-medium hover:underline underline-offset-4"
-                    to={localStorage.getItem("token")?"/dashboard":"/signin"}
-                  >
-                    Sign In
-                  </Link>
-                </div>
-              </div>
+
+        <section className="bg-plum text-chalk">
+          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 py-20 sm:px-8 md:flex-row md:items-center md:justify-between md:py-24">
+            <div>
+              <h2 className="font-display text-4xl tracking-tight sm:text-5xl">Start with one link.</h2>
+              <p className="mt-3 text-lg text-chalk/80">Save your first one in under a minute.</p>
             </div>
+            <Link
+              to={startHref}
+              className="rounded-md bg-sodium px-7 py-3.5 font-semibold text-bark outline-none transition-colors hover:bg-chalk focus-visible:ring-2 focus-visible:ring-chalk focus-visible:ring-offset-2 focus-visible:ring-offset-plum"
+            >
+              {signedIn ? "Open your dashboard" : "Create your account"}
+            </Link>
           </div>
         </section>
       </main>
-      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t">
-        <p className="text-xs text-gray-500 dark:text-gray-400">
-          © 2023 SecondBrain Inc. All rights reserved.
-        </p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-xs hover:underline underline-offset-4" to="#">
-            Terms of Service
+
+      <footer className="mx-auto flex max-w-6xl items-center px-5 py-6 text-sm text-bark/70 sm:px-8">
+        <p>© 2026 Nexus</p>
+        {!signedIn && (
+          <Link to="/signin" className={`ml-auto rounded underline underline-offset-4 ${focus}`}>
+            Sign in
           </Link>
-          <Link className="text-xs hover:underline underline-offset-4" to="#">
-            Privacy
-          </Link>
-        </nav>
+        )}
       </footer>
     </div>
   );

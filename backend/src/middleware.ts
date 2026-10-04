@@ -7,8 +7,6 @@ const JWT_SECRET = (process.env.JWT_SECRET);
 
 export const userMiddleware = (req: Request, res: Response, next: NextFunction): void => {
     const token = req.headers["authorization"];
-    
-    console.log("Token:", token); // Log the extracted token
 
     if (!token) {
         res.status(401).json({ message: "No token provided" });
