@@ -190,6 +190,5 @@ Contributions are always welcome!
 
 ## 📞 Contact
 
-[@Yash Vikram](https://x.com/yashvikram30)
+[@Yash Vikram](https://x.com/100xYash)
 
-Project Link: [https://github.com/yashvikram30/nexus](https://github.com/yashvikram30/nexus)
